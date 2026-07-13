@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prompt Rewriter — free &amp; open source</title>
+  <meta name="description" content="Free, open-source prompt rewriter. Lints and rewrites your prompt using the official prompting guides from Anthropic, OpenAI, Google, and Perplexity. Runs entirely in your browser.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- animated backdrop -->
+  <div class="aurora" aria-hidden="true">
+    <span class="blob b1"></span>
+    <span class="blob b2"></span>
+    <span class="blob b3"></span>
+    <div class="grid-lines"></div>
+  </div>
+
+  <header class="site-header">
+    <a class="brand" href="#top">
+      <svg class="brand-mark" viewBox="0 0 32 32" width="26" height="26" fill="none" aria-hidden="true">
+        <rect x="1" y="1" width="30" height="30" rx="8" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M9 21l4-10 3 7 2-4 5 7" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="23" cy="9" r="2" fill="var(--accent)"/>
+      </svg>
+      <span>Prompt&nbsp;Rewriter</span>
+    </a>
+    <nav>
+      <a href="#sources">Docs</a>
+      <a class="ghost-btn" href="https://github.com" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12 2A10 10 0 002 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.22.66-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.9-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.6 9.6 0 015 0c1.9-1.29 2.74-1.02 2.74-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.74c0 .27.16.57.67.48A10 10 0 0022 12 10 10 0 0012 2z"/></svg>
+        Star
+      </a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <!-- HERO -->
+    <section class="hero">
+      <span class="eyebrow"><span class="dot"></span> Built on the official prompting guides</span>
+      <h1>Turn rough prompts into <span class="grad">precision instructions</span>.</h1>
+      <p class="sub">Paste a prompt, pick the model you'll run it on, and get it linted &amp; rewritten against that vendor's own guide — Anthropic, OpenAI, Google, Perplexity. Free, open source, 100% in your browser.</p>
+
+      <div class="composer">
+        <div class="composer-top">
+          <label for="prompt" class="composer-label">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h10M4 17h7" stroke-linecap="round"/></svg>
+            Your prompt
+          </label>
+          <span id="wordcount" class="wordcount">0 words</span>
+        </div>
+        <textarea id="prompt" rows="5" spellcheck="false" placeholder="e.g. can you suggest some ways to make my website faster"></textarea>
+
+        <div class="target-row">
+          <span class="target-label">Rewrite for</span>
+          <div id="target-pills" class="pills" role="tablist" aria-label="Target model"></div>
+          <button id="analyze" class="cta">
+            <span>Analyze &amp; rewrite</span>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+      <!-- hidden native select kept for app.js compatibility -->
+      <select id="target" hidden aria-hidden="true"></select>
+    </section>
+
+    <!-- RESULTS (bento) -->
+    <section id="results" class="bento" hidden>
+      <article class="card score-card reveal">
+        <h2 class="card-title">Prompt score</h2>
+        <div class="score-ring">
+          <svg viewBox="0 0 120 120" width="128" height="128">
+            <circle class="ring-bg" cx="60" cy="60" r="52"/>
+            <circle id="ring-fill" class="ring-fill" cx="60" cy="60" r="52"/>
+          </svg>
+          <div class="score-num"><span id="score-val">–</span><small>/100</small></div>
+        </div>
+        <p id="score-caption" class="score-caption">Waiting for analysis…</p>
+      </article>
+
+      <article class="card findings-card reveal">
+        <h2 class="card-title">Findings <span id="findings-count" class="count-badge">0</span></h2>
+        <ul id="findings"></ul>
+      </article>
+
+      <article class="card compare-card reveal">
+        <div class="compare" aria-label="Original and rewritten prompt, side by side">
+          <div class="pane">
+            <div class="pane-head">
+              <h2 class="card-title">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h10M4 17h7" stroke-linecap="round"/></svg>
+                Original
+              </h2>
+              <span id="orig-meta" class="pane-meta"></span>
+            </div>
+            <textarea id="original" rows="16" spellcheck="false" readonly aria-label="Original prompt"></textarea>
+          </div>
+
+          <div class="compare-divider" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+
+          <div class="pane">
+            <div class="pane-head">
+              <h2 class="card-title accent">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21l4-10 3 7 2-4 5 7" stroke-linecap="round" stroke-linejoin="round" transform="scale(.8) translate(2 -2)"/><path d="M12 2l1.2 3L16 6l-2.8 1L12 10l-1.2-3L8 6l2.8-1z"/></svg>
+                Rewritten
+              </h2>
+              <button id="copy" class="chip-btn">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M6 15H5a2 2 0 01-2-2V5a2 2 0 012-2h8a2 2 0 012 2v1"/></svg>
+                Copy
+              </button>
+            </div>
+            <textarea id="rewrite" rows="16" spellcheck="false" aria-label="Rewritten prompt"></textarea>
+          </div>
+        </div>
+        <p class="hint">Rules-based rewrite: your prompt in the vendor's preferred shape, with <code>[TODO]</code> markers where the guides say something's missing. Connect your own AI below for a fully written rewrite.</p>
+      </article>
+
+      <article class="card byok-card reveal" id="byok">
+        <div class="byok-head">
+          <h2 class="card-title">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 2l-2 2m-7.6 7.6a5.5 5.5 0 11-7.8 7.8 5.5 5.5 0 017.8-7.8zm0 0L19 4m-3.5 3.5L18 10" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Connect your own AI
+          </h2>
+          <span class="byok-badge">key never leaves your browser</span>
+        </div>
+        <p class="hint">Use any model you have a key for — the big four, or any OpenAI-compatible endpoint (OpenRouter, Groq, Mistral, DeepSeek, xAI, local Ollama…). Calls go straight from your browser to the provider; this site has no server. Some providers may block browser calls (CORS).</p>
+        <div class="llm-grid">
+          <div class="field">
+            <label for="provider">Provider</label>
+            <select id="provider"></select>
+          </div>
+          <div class="field grow" id="baseurl-field" hidden>
+            <label for="baseurl">Base URL (OpenAI-compatible)</label>
+            <input id="baseurl" type="text" spellcheck="false" placeholder="https://openrouter.ai/api/v1">
+          </div>
+          <div class="field">
+            <label for="model">Model</label>
+            <input id="model" type="text" spellcheck="false">
+          </div>
+          <div class="field grow">
+            <label for="apikey">API key</label>
+            <input id="apikey" type="password" autocomplete="off" placeholder="sk-…">
+          </div>
+          <button id="llm-rewrite" class="cta small">
+            <span>AI rewrite</span>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 2l1.8 4.7L18.5 8.5l-4.7 1.8L12 15l-1.8-4.7L5.5 8.5l4.7-1.8z" stroke-linejoin="round"/><path d="M19 14l.9 2.3 2.3.9-2.3.9L19 20.4l-.9-2.3-2.3-.9 2.3-.9z" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <p id="llm-status" class="hint status" aria-live="polite"></p>
+      </article>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="how">
+      <div class="how-card reveal">
+        <span class="step">01</span>
+        <h3>Lint</h3>
+        <p>Your prompt is checked against rules distilled from each vendor's docs. Every finding links to its source.</p>
+      </div>
+      <div class="how-card reveal">
+        <span class="step">02</span>
+        <h3>Restructure</h3>
+        <p>Free, deterministic rewrite into the target's preferred shape — XML tags, context-first, or search-tight.</p>
+      </div>
+      <div class="how-card reveal">
+        <span class="step">03</span>
+        <h3>Supercharge</h3>
+        <p>Optionally hand it to a real model with your own key for a fully AI-written rewrite. No server involved.</p>
+      </div>
+    </section>
+
+    <!-- SOURCES -->
+    <section id="sources" class="sources">
+      <h2 class="section-title">Distilled from the official docs</h2>
+      <div class="source-grid">
+        <a class="source reveal" href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices" target="_blank" rel="noopener"><span class="src-tag">Anthropic</span> Claude prompting best practices</a>
+        <a class="source reveal" href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-opus-4-8" target="_blank" rel="noopener"><span class="src-tag">Anthropic</span> Prompting Claude Opus 4.8</a>
+        <a class="source reveal" href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-sonnet-5" target="_blank" rel="noopener"><span class="src-tag">Anthropic</span> Prompting Claude Sonnet 5</a>
+        <a class="source reveal" href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-tools" target="_blank" rel="noopener"><span class="src-tag">Anthropic</span> Console prompting tools</a>
+        <a class="source reveal" href="https://learn.chatgpt.com/docs/prompting" target="_blank" rel="noopener"><span class="src-tag">OpenAI</span> Prompting guide</a>
+        <a class="source reveal" href="https://ai.google.dev/gemini-api/docs/prompting-strategies" target="_blank" rel="noopener"><span class="src-tag">Google</span> Gemini prompting strategies</a>
+        <a class="source reveal" href="https://docs.perplexity.ai/docs/agent-api/prompt-guide" target="_blank" rel="noopener"><span class="src-tag">Perplexity</span> Prompt guide</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>MIT licensed · rulesets live in <code>rules.js</code> — contributions welcome.</p>
+  </footer>
+
+  <script src="rules.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
